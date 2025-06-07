@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../contexts'
+import axiosInstance from '../utils/axiosInstance';
 
 function Profile() {
-  const { username, isLoggedIn, userEvents } = useUserContext();
+  const { username, isLoggedIn, setIsLoggedIn, setUsername } = useUserContext();
   const [email, setEmail] = useState("");
-  const [phoneNo, setPhoneNo] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isEditable, setIsEditable] = useState(false);
   const [message, setMessage] = useState("");
   const [color, setColor] = useState("text-red-500");
@@ -21,38 +22,79 @@ function Profile() {
     }, 3000);
   }
 
+  const getUserDetails = async () => {
+    const res = await axiosInstance.get("/user/user-details");
+    const response = await res.data.data;
+    const dateOnly = new Date(response.dob).toISOString().split('T')[0];
+    setEmail(response.email);
+    setPhoneNumber(response.phoneNumber);
+    setDob(dateOnly);
+    setIsLoggedIn(true);
+    setUsername(response.username);
+  };
+
   useEffect(() => {
-    if (!isLoggedIn) {
+    try {
+      getUserDetails();
+    } catch (error) {
+      displayMessage("Something went wrong while fetching user details!", "text-red-500");
+      console.log("Something went wrong while fetching user details!", error);
+      if (!isLoggedIn) {
       navigate('/signUp');
     }
-    const loadDetails = JSON.parse(localStorage.getItem(username));
-    if (!loadDetails) {
-      navigate('/signUp');
     }
-    if (loadDetails.email) {
-      setEmail(loadDetails.email);
-    }
-    if (loadDetails.phoneNumber) {
-      setPhoneNo(loadDetails.phoneNumber);
-    }
-    if (loadDetails.dob) {
-      setDob(loadDetails.dob);
-    }
+
+
+    // if (!isLoggedIn) {
+    //   navigate('/signUp');
+    // }
+    // const loadDetails = JSON.parse(localStorage.getItem(username));
+    // if (!loadDetails) {
+    //   navigate('/signUp');
+    // }
+    // if (loadDetails.email) {
+    //   setEmail(loadDetails.email);
+    // }
+    // if (loadDetails.phoneNumber) {
+    //   setPhoneNumber(loadDetails.phoneNumber);
+    // }
+    // if (loadDetails.dob) {
+    //   setDob(loadDetails.dob);
+    // }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const editProfile = (e) => {
+  const editProfile = async (e) => {
     e.preventDefault();
     if (isEditable) {
-      let userDetails = localStorage.getItem(username);
-      if (!userDetails) {
-        displayMessage("Something went wrong...", "text-red-500");
-      }
-      else {
+      try {
+        //TODO: make even username editable
+        const res = await axiosInstance.post("/user/profile",{
+          email,
+          phoneNumber,
+          dob
+        });
+        const response = res.data.data;
+        const dateOnly = new Date(response.dob).toISOString().split('T')[0];
+        setEmail(response.email);
+        setDob(dateOnly);
+        setPhoneNumber(response.phoneNumber);
+
+        let userDetails = localStorage.getItem(username);
         userDetails = JSON.parse(userDetails);
-        localStorage.setItem(username, JSON.stringify({ ...userDetails, email: email, phoneNumber: phoneNo, dob: dob, userEvents}));
+        localStorage.setItem(username, JSON.stringify({ ...userDetails, email: email, phoneNumber: phoneNumber, dob: dob}));
         setIsEditable(false);
         displayMessage("Profile successfully edited!", "text-green-500");
+      }
+
+      catch (error) {
+        const backendMessage = error.response?.data?.message;
+        if(backendMessage === "No field should be empty!" || backendMessage === "User not found!") {
+          displayMessage(backendMessage, "text-red-500");
+        }
+        else {
+          displayMessage("Something went wrong...", "text-red-500");
+        }
       }
     }
     else {
@@ -168,8 +210,8 @@ function Profile() {
                   </label>
                   <input
                     type="tel"
-                    value={phoneNo}
-                    onChange={(e) => {setPhoneNo(e.target.value)}}
+                    value={phoneNumber}
+                    onChange={(e) => {setPhoneNumber(e.target.value)}}
                     placeholder="1234567890"
                     readOnly={!isEditable}
                     required={true}

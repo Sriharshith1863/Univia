@@ -1,34 +1,68 @@
 import {useState} from 'react'
 import { useNavigate } from "react-router-dom";
-import { useUserContext } from '../contexts';
+import axiosInstance from '../utils/axiosInstance';
 function SignUp({type}) {
-    // eslint-disable-next-line no-unused-vars
-    const {username, setIsLoggedIn, setUsername} = useUserContext();
         const [usernameLocal, setUsernameLocal] = useState("");
         const [password, setPassword] = useState("");
         const [confirmPassword, setConfirmPassword] = useState("");
+        const [email, setEmail]  = useState("");
+        const [phoneNumber, setPhoneNumber] = useState("");
         const [errorMessage, setErrorMessage] = useState("");
         const [dob, setDob] = useState("");
         const navigate = useNavigate();
-        const signUp = (e) => {
+        const signUp = async (e) => {
             e.preventDefault();
-            const checkUser = localStorage.getItem(usernameLocal+type);
-            if(!checkUser) {
-              if(password === confirmPassword) {
-                localStorage.setItem(usernameLocal+type, JSON.stringify({username: usernameLocal+type, password: password, dob: dob}));
-                setUsername(usernameLocal+type);
-                navigate("/home");
-                setIsLoggedIn(true);
-                setErrorMessage("");
+            try {
+              await axiosInstance.post("/user/signUp",{
+                username: usernameLocal+type,
+                password,
+                dob,
+                email,
+                phoneNumber,
+                confirmPassword
+              });
+
+              localStorage.setItem(usernameLocal+type, JSON.stringify({username: usernameLocal+type, password: password, dob: dob, phoneNumber: phoneNumber, email: email}));
+              navigate("/");
+              setErrorMessage("");
+            } catch (error) {
+              const backendMessage = error.response?.data?.message;
+              if(!backendMessage) {
+                console.log("something went wrong while registering user.");
               }
               else {
-                setErrorMessage("Retype your password");
-                setConfirmPassword("");
+                if(backendMessage === "retype your password") {
+                  setErrorMessage(backendMessage);
+                  setConfirmPassword("");
+                }
+                else {
+                  setErrorMessage(backendMessage);
+                }
               }
             }
-            else {
-              setErrorMessage("Username is already in use, choose another one");
-            }
+
+            // const checkUser = localStorage.getItem(usernameLocal+type);
+            // if(!checkUser) {
+            //   if(password === confirmPassword) {
+            //     if(phoneNumber && email) {
+            //       localStorage.setItem(usernameLocal+type, JSON.stringify({username: usernameLocal+type, password: password, dob: dob, phoneNumber: phoneNumber, email: email}));
+            //       setUsername(usernameLocal+type);
+            //       navigate("/home");
+            //       setIsLoggedIn(true);
+            //       setErrorMessage("");
+            //     }
+            //     else {
+            //       setErrorMessage("Email and phone number are compulsory");
+            //     }
+            //   }
+            //   else {
+            //     setErrorMessage("Retype your password");
+            //     setConfirmPassword("");
+            //   }
+            // }
+            // else {
+            //   setErrorMessage("Username is already in use, choose another one");
+            // }
         }
 
   return (
@@ -67,9 +101,25 @@ function SignUp({type}) {
         onChange={(e) => setDob(e.target.value)}
         className="border border-gray-600 bg-gray-700 rounded px-3 py-2 focus:ring-purple-500 focus:ring-2 focus:border-purple-500 outline-none text-gray-200"
         />
+        <label htmlFor='email' className="font-medium">Email</label>
+        <input
+        type="email"
+        required={true}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border border-gray-600 bg-gray-700 rounded px-3 py-2 focus:ring-purple-500 focus:ring-2 focus:border-purple-500 outline-none text-gray-200"
+        />
+        <label htmlFor='phoneNumber' className="font-medium">Phone Number</label>
+        <input
+        type="tel"
+        required={true}
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
+        className="border border-gray-600 bg-gray-700 rounded px-3 py-2 focus:ring-purple-500 focus:ring-2 focus:border-purple-500 outline-none text-gray-200"
+        />
         <button type="submit" className="bg-purple-600 cursor-pointer hover:bg-purple-700 text-white font-medium py-2 mt-2 rounded-md transition duration-200 shadow-md">Sign Up</button>
     </form>
   )
 }
 
-export default SignUp
+export default SignUp;
