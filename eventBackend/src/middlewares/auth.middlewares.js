@@ -19,6 +19,11 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
         req.user = user;
         next();
     } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            console.log("invalid access token!");
+        throw new ApiError(408, "Access token expired");
+        
+    }
         console.log("JWT Error: ", error.name, error.message);
         throw new ApiError(407, "Invalid access token");
     }

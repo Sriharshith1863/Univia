@@ -1,27 +1,45 @@
 import React, {useState} from 'react'
 import { useNavigate, NavLink } from 'react-router-dom';
-import { useUserContext } from '../contexts';
+import { useEventContext, useUserContext } from '../contexts';
 import axiosInstance from '../utils/axiosInstance';
 function Login({type}) {
     //TODO: remove the username and setUsername if it is not needed
     // eslint-disable-next-line no-unused-vars
     const {username, setIsLoggedIn, setUsername} = useUserContext();
+    const {setEvents} = useEventContext();
     const [usernameLocal, setUsernameLocal] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const navigate= useNavigate();
+
+        const getUserDetails = async () => {
+        try {
+          if(type === 'org') {
+            const res1 = await axiosInstance.get("/event/user-events");
+            const response1 = await res1.data.data;
+            const result = Object.keys(response1).length === 0 && response1.constructor === Object ? [] : response1;
+            console.log(result);
+            setEvents(result || []);
+            console.log("got user events!");
+          }
+        } catch (error) {
+          console.log("User not logged in (403)", error);
+          setIsLoggedIn(false);
+          setUsername("");
+        }
+      };
     const loginUser = async (e) => {
         e.preventDefault();
-
         try {
             const res = await axiosInstance.post("/user/login", {
                 username: usernameLocal+type,
                 password
             });
-            const response = res.data.data._doc;
+            const response = res.data.data;
             console.log(response);
             setUsername(response.username);
             setIsLoggedIn(true);
+            await getUserDetails();
             navigate("/home");
             setErrorMessage("");
         } catch (error) {

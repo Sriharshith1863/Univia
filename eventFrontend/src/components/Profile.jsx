@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../contexts'
 import axiosInstance from '../utils/axiosInstance';
-
+import FileUploader from './fileUploader';
 function Profile() {
   const { username, isLoggedIn, setIsLoggedIn, setUsername } = useUserContext();
   const [email, setEmail] = useState("");
@@ -12,7 +12,7 @@ function Profile() {
   const [color, setColor] = useState("text-red-500");
   const [dob, setDob] = useState("");
   const navigate = useNavigate();
-
+  const [avatar, setAvatar] = useState("/defaultAvatar.webp");
   const displayMessage = (messageToDisplay, colorToDisplay) => {
     setMessage(messageToDisplay);
     setColor(colorToDisplay);
@@ -21,7 +21,6 @@ function Profile() {
       setColor("");
     }, 3000);
   }
-
   const getUserDetails = async () => {
     const res = await axiosInstance.get("/user/user-details");
     const response = await res.data.data;
@@ -31,6 +30,7 @@ function Profile() {
     setDob(dateOnly);
     setIsLoggedIn(true);
     setUsername(response.username);
+    setAvatar(response.avatar);
   };
 
   useEffect(() => {
@@ -63,6 +63,10 @@ function Profile() {
     // }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+const handleUploadResult = (avatarUrl) => {
+  setAvatar(avatarUrl);
+}
 
   const editProfile = async (e) => {
     e.preventDefault();
@@ -119,17 +123,12 @@ function Profile() {
           <div className="flex flex-col items-center justify-center bg-gray-800 rounded-xl p-6 shadow-lg">
             <div className="relative group">
               <img 
-                src="/defaultAvatar.webp" 
+                src={avatar} 
                 alt="avatar" 
-                className="h-48 w-48 rounded-full object-cover border-4 border-indigo-500/50"
+                className="h-70 w-80 rounded-xl object-cover border-4 border-indigo-500/50"
               />
-              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm">Change Photo</span>
-              </div>
             </div>
-            <button className="mt-6 w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-md">
-              Upload Photo
-            </button>
+            <FileUploader onUploadSuccess={handleUploadResult}/>
           </div>
 
           {/* Profile Form */}

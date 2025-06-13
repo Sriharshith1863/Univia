@@ -6,69 +6,128 @@ import {EventProvider} from './contexts/EventContext.js'
 import Layout from './Layout.jsx';
 import { useEffect, useState } from 'react';
 import Event from './components/Event.jsx';
-
+import axiosInstance from './utils/axiosInstance.js';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
-  const launchedEventsDetails = JSON.parse(localStorage.getItem("launchedEvents"));
-  const [launchedEvents, setLaunchedEvents] = useState(Array.isArray(launchedEventsDetails) ? launchedEventsDetails : []);
-  
-  const resetUserDetails = () => {
-    setUsername("");
-    setIsLoggedIn(false);
+  const [loading, setLoading] = useState(true);
+  const [launchedEvents, setLaunchedEvents] = useState([]);
+
+  const resetUserDetails = async () => {
+    try {
+      await axiosInstance.post("/user/logout-user");
+      setUsername("");
+      setIsLoggedIn(false);
+      setEvents([]);
+    } catch (error) {
+      console.log("Something went wrong while logging out the user!\n", error);
+    }
   }
   
-  const userDetails = JSON.parse(localStorage.getItem(username));
-  const [events, setEvents] = useState(Array.isArray(userDetails?.userEvents) ? userDetails.userEvents : []);
+  const [events, setEvents] = useState([]);
   
-  useEffect(() => {
-    setEvents(Array.isArray(userDetails?.userEvents) ? userDetails.userEvents : []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[isLoggedIn]);
+  const getLaunchedEvents = async () => {
+    const res = await axiosInstance.get("/event/launched-events");
+    const response = await res.data.data;
+    setLaunchedEvents(response);
+  }
 
-  useEffect(() => {  //TODO: if we have to do any bigger work after adding a event, then may be this can cause problem, because it updates the localStorage after a render cycle
-    const userdetails = JSON.parse(localStorage.getItem(username));
-    localStorage.setItem(username, JSON.stringify({...userdetails, userEvents: events}));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[events]);
+    const getUserDetails = async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get("/user/user-details"); //TODO: maybe plan to just send the username from backend
+        const response = await res.data.data;
 
-  useEffect(() => {
-    localStorage.setItem("launchedEvents",JSON.stringify(launchedEvents));
-  },[launchedEvents]);
+        setIsLoggedIn(true);
+        setUsername(response.username);
+        
+        if(response.username.endsWith("org")) {
+          const res1 = await axiosInstance.get("/event/user-events");
+          const response1 = await res1.data.data;
+          const result = Object.keys(response1).length === 0 && response1.constructor === Object ? [] : response1;
+          console.log(result);
+          setEvents(result || []);
+        }
+      } catch (error) {
+        if (error.response?.status === 407) {
+          console.log("User not logged in");
+          setIsLoggedIn(false);
+          setUsername("");
+        } else {
+          console.error("Unexpected error while getting user details:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
+  };
 
-  const createEvent = (event) => {
-    setEvents(prev => [...prev, {...event}]);
+    useEffect(() => {
+        console.log("app rendered!");
+        getLaunchedEvents();
+        getUserDetails();
+    }, []);
+
+  const createEvent = async (event) => {
+    try {
+      const res = await axiosInstance.post("/event/create-event", event);
+    const response = await res.data.data;
+    const dateOnly = new Date(response.dateTime).toISOString().slice(0, 16);
+    response.dateTime = dateOnly;
+    setEvents(prev => [...prev, {...response}]); 
+    } catch (error) {
+      const backendMessage = error.response?.data?.message || error.message;
+      console.log("Something went wrong while creating an event", backendMessage);
+    }
+
     // setEvents((prev) => (
     //   prev.push({eventId: dateNow, ...event})
     //shouldn't do state mutation
     // ));
   }
 
-  const launchEvent = (event) => {
-    setLaunchedEvents(prev => [...prev, {...event}]);
+  const launchEvent = async (event) => {
+    try {
+      event.eventLaunched = true;
+      let launchedEvent = await axiosInstance.patch("/event/edit-event",event);
+      launchedEvent = await launchedEvent.data.data;
+      const dateOnly = new Date(launchedEvent.dateTime).toISOString().slice(0, 16);
+      launchedEvent.dateTime = dateOnly;
+      setLaunchedEvents(prev => [...prev, {...launchedEvent}]);
+    } catch (error) {
+      const backendMessage = error.response?.data?.message || error.message;
+      console.log("Something went wrong while launching an event", backendMessage);
+    }
   }
 
-  const deleteEvent = (deleteEventId) => {
-    setEvents(prevEvents => prevEvents.filter(event => event.eventId !== deleteEventId));
-    setLaunchedEvents(prevlaunchedEvents => prevlaunchedEvents.filter(event => event.eventId !== deleteEventId));
+  const deleteEvent = async (deleteEventId) => {
+    try {
+      const eventId = deleteEventId;
+      await axiosInstance.delete("/event/delete-event",{data: { eventId }});
+      setEvents(prevEvents => prevEvents.filter(event => event.eventId !== deleteEventId));
+      setLaunchedEvents(prevlaunchedEvents => prevlaunchedEvents.filter(event => event.eventId !== deleteEventId));
+    } catch (error) {
+      const backendMessage = error.response?.data?.message || error.message;
+      console.log("Something went wrong while deleting an event", backendMessage);
+    }
   }
 
-  const editEvent = (event) => {
-    setEvents(prev => prev.map(prevEvent => prevEvent.eventId === event.eventId ? event : prevEvent));
+  const editEvent = async (event) => {
+    try {
+      const res = await axiosInstance.patch("/event/edit-event", event);
+      const response = await res.data.data;
+      const dateOnly = new Date(response.dateTime).toISOString().split('T')[0];
+      response.dateTime = dateOnly;
+      setEvents(prev => prev.map(prevEvent => prevEvent.eventId === event.eventId ? response : prevEvent));
+    } catch (error) {
+      const backendMessage = error.response?.data?.message || error.message;
+      console.log("Something went wrong while editing an event", backendMessage);
+    }
   }
-
-  const addEvent = (event) => {
-    setEvents((prevEvents) => [...prevEvents, {...event}]);
-  };
-
-  const removeEvent = (eventId) => {
-    setEvents((prevEvents) => prevEvents.filter((event) => event.eventId !== eventId));
-  };
 
 
   return (
-    <EventProvider value={{events, createEvent, launchEvent, setEvents, deleteEvent, editEvent, addEvent, removeEvent}}>
-      <UserProvider value={{username, isLoggedIn, setIsLoggedIn, setUsername, resetUserDetails}}>
+    <EventProvider value={{events, createEvent, launchEvent, setEvents, deleteEvent, editEvent}}>
+      <UserProvider value={{username, isLoggedIn, setIsLoggedIn, setUsername, resetUserDetails, loading, setLoading}}>
           <BrowserRouter> {/*changed from createBrowserRouter to browser router because createbrowser router won't allow dynamic routes, which we want for different event pages*/}
           <Routes>
           <Route path='/' element={<Layout />}>

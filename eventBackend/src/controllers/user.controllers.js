@@ -81,7 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id);
 
     const loggedInUser = await User.findById(user._id)
-        .select("-password -refreshToken");
+        .select("-password -refreshToken").lean();
     const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -135,8 +135,113 @@ const currentUserDetails = asyncHandler(async (req, res) => {
     currentUser = currentUser._doc;
     return res
         .status(200)
-        .json(new ApiResponse(200, {...currentUser}, "Retrived user details successfully!"));
+        .json(new ApiResponse(200, {...currentUser, avatar: currentUser.avatar.url}, "Retrived user details successfully!"));
 });
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken;
+    if(!incomingRefreshToken) {
+        throw new ApiError(401, "Refresh Token is required!");
+    }
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+        const user = await User.findById(decodedToken?._id);
+        if(!user) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+        if(incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+        }
+        const {accessToken, refreshToken: newRefreshToken} = 
+        await generateAccessAndRefreshToken(user._id);
 
-export { signUpUser, loginUser, updateProfile, currentUserDetails };
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(new ApiResponse(
+                200,
+                {accessToken,
+                refreshToken: newRefreshToken 
+                },
+                "Access token refreshed successfully"
+            ));
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while refreshing access token");   
+    }
+});
+
+const UpdateUserAvatar = asyncHandler(async (req, res) => {
+    console.log("atleast entered into the function!");
+    const avatarLocalPath = req.file?.path;
+    if(!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is missing");
+    }
+    let avatar;
+    try {
+        avatar = await uploadOnCloudinary(avatarLocalPath);
+        console.log("Uploaded avatar", avatar);
+    } catch (error) {
+        console.log("Error uploading avatar", error);
+        throw new ApiError(400, "failed to upload avatar");
+    }
+    try {
+        let previousPublicId = await User.findById(req.user?._id).select("avatar");
+        previousPublicId = previousPublicId._doc;
+        console.log(previousPublicId);
+        previousPublicId = previousPublicId.avatar.public_id;
+        let user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    avatar: {
+                        url: avatar.url,
+                        public_id: avatar.public_id
+                    }
+                }
+            },
+            {new: true}
+        ).select("avatar");
+        user = user._doc;
+        await deleteFromCloudinary(previousPublicId);
+        return res
+            .status(200)
+            .json(new ApiResponse(200, {avatar: user.avatar.url}, "avatar successfully updated!"));
+    } catch (error) {
+        console.log("avatar updation failed!");
+        if(avatar) {
+            await deleteFromCloudinary(avatar.public_id);
+        }
+        throw new ApiError(400, "Failed to update the avatar");
+    }
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                refreshToken: undefined,
+            }
+        },
+        {new: true}
+    );
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+    }
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "User logged out successfully"));
+});
+
+export { signUpUser, loginUser, updateProfile, currentUserDetails, UpdateUserAvatar, refreshAccessToken, logoutUser };

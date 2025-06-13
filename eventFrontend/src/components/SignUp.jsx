@@ -40,29 +40,6 @@ function SignUp({type}) {
                 }
               }
             }
-
-            // const checkUser = localStorage.getItem(usernameLocal+type);
-            // if(!checkUser) {
-            //   if(password === confirmPassword) {
-            //     if(phoneNumber && email) {
-            //       localStorage.setItem(usernameLocal+type, JSON.stringify({username: usernameLocal+type, password: password, dob: dob, phoneNumber: phoneNumber, email: email}));
-            //       setUsername(usernameLocal+type);
-            //       navigate("/home");
-            //       setIsLoggedIn(true);
-            //       setErrorMessage("");
-            //     }
-            //     else {
-            //       setErrorMessage("Email and phone number are compulsory");
-            //     }
-            //   }
-            //   else {
-            //     setErrorMessage("Retype your password");
-            //     setConfirmPassword("");
-            //   }
-            // }
-            // else {
-            //   setErrorMessage("Username is already in use, choose another one");
-            // }
         }
 
   return (

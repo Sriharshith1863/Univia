@@ -1,30 +1,7 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom';
-import { useUserContext } from '../contexts';
-import axiosInstance from '../utils/axiosInstance';
 function Home({eventsToRender = []}) {
   const navigate = useNavigate();
-  const { isLoggedIn, setIsLoggedIn, setUsername } = useUserContext();
-
-  const getUserDetails = async () => {
-    const res = await axiosInstance.get("/user/user-details"); //TODO: maybe plan to just send the username from backend
-    const response = await res.data.data;
-    setIsLoggedIn(true);
-    setUsername(response.username);
-  };
-
-    useEffect(() => {
-      try {
-        getUserDetails();
-      } catch (error) {
-        console.log("Something went wrong while fetching user details!", error);
-        if (!isLoggedIn) {
-        navigate('/signUp');
-      }
-      }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-  
 
   return (
     <div className='min-h-screen bg-gray-900 text-gray-100 py-8 px-4'>

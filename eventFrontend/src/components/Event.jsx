@@ -5,12 +5,12 @@ function Event({ events1, events2 }) {
   const { creator, eventId } = useParams();
 
   let eventToRender = events1.find(event =>
-    event.eventId === Number(eventId) && event.eventCreater === creator
+    event.eventId === eventId && event.eventCreater === creator
   );
 
   if (!eventToRender) {
     eventToRender = events2.find(event =>
-      event.eventId === Number(eventId) && event.eventCreater === creator
+      event.eventId === eventId && event.eventCreater === creator
     );
   }
   if (!eventToRender) return <div>event not found</div>;

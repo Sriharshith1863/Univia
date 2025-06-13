@@ -2,7 +2,7 @@ import React, {useEffect, useState, useMemo} from 'react'
 import { useEventContext, useUserContext } from '../contexts'
 import { useNavigate } from 'react-router-dom';
 function MyEvents() {
-  const {isLoggedIn, username} = useUserContext();
+  const {isLoggedIn, username, loading} = useUserContext();
   const {events, createEvent, launchEvent, setEvents, deleteEvent, editEvent} = useEventContext();
   const initialFormData = {
     eventId: 0,
@@ -23,11 +23,16 @@ function MyEvents() {
   const navigate = useNavigate();
   const [activateForm, setActiveForm] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
+
+
   useEffect(() => {
+    if(loading) return;
+    console.log(`loading: ${loading}`);
+    console.log(`username: ${username}`);
     if (!isLoggedIn) {
       navigate('/');
     }
-    if(username.substring(username.length-3) !== 'org') {
+    if(username.substring(username.length-3) !== 'org') {      
       navigate('/home');
     }
     // eslint-disable-next-line
@@ -73,6 +78,7 @@ function MyEvents() {
   }
 
   const renderedEvents = useMemo(() => {
+    console.log(events);
     return (
       <div className="space-y-4 mt-8 w-full">
         {events.length === 0 ? (

@@ -1,14 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 const eventSchema = new Schema(
   {
-    eventId: {
-        type: Number,
-        required: true,
-        unique: true,
-        trim: true,
-        index: true,
-        default: Date.now()
-    },
     eventName: {
         type: String,
         required: true,
@@ -21,6 +13,12 @@ const eventSchema = new Schema(
     dateTime: {
         type: Date,
         required: true,
+        validate: {
+                validator: function(value) {
+                    return value >= new Date(); // DOB must be in the past
+                },
+                message: 'Date of event must be in the future!'
+            }
     },
     description: {
         type: String,
@@ -41,6 +39,7 @@ const eventSchema = new Schema(
     },
     organiserEmailId: {
         type: String,
+        match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address']
     },
     imageUrl: {
         type: String,
