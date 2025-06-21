@@ -1,6 +1,8 @@
 import './App.css'
 import {BrowserRouter, Route, Routes } from 'react-router-dom';
-import {Login, SignUp, Home, MyTickets, Profile, MyEvents} from "./components/index.js";
+import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import {Login, SignUp, Home, MyTickets, Profile, MyEvents, MyTicketsView} from "./components/index.js";
 import { UserProvider } from './contexts/UserContext.js';
 import {EventProvider} from './contexts/EventContext.js'
 import Layout from './Layout.jsx';
@@ -12,6 +14,8 @@ function App() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [launchedEvents, setLaunchedEvents] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [events, setEvents] = useState([]);
 
   const resetUserDetails = async () => {
     try {
@@ -19,20 +23,26 @@ function App() {
       setUsername("");
       setIsLoggedIn(false);
       setEvents([]);
+      setTickets([]);
+      toast.success('Successfully logged out!');
     } catch (error) {
+      toast.error('Something went wrong while logging out!');
       console.log("Something went wrong while logging out the user!\n", error);
     }
   }
   
-  const [events, setEvents] = useState([]);
-  
   const getLaunchedEvents = async () => {
-    const res = await axiosInstance.get("/event/launched-events");
-    const response = await res.data.data;
-    setLaunchedEvents(response);
+    try {
+      const res = await axiosInstance.get("/event/launched-events");
+      const response = await res.data.data;
+      setLaunchedEvents(response);
+    } catch (error) {
+      console.log("Something went wrong while fetching launched events!", error);
+      toast.error('Something went wrong while fetching launched events!');
+    }
   }
 
-    const getUserDetails = async () => {
+  const getUserDetails = async () => {
       setLoading(true);
       try {
         const res = await axiosInstance.get("/user/user-details"); //TODO: maybe plan to just send the username from backend
@@ -48,6 +58,13 @@ function App() {
           console.log(result);
           setEvents(result || []);
         }
+        else if(response.username.endsWith("usr")) {
+          const res1 = await axiosInstance.get("/ticket/get-tickets");
+          const response1 = await res1.data.data;
+          const result = Object.keys(response1).length === 0 && response1.constructor === Object ? [] : response1;
+          setTickets(result || []);
+          console.log(result);
+        }
       } catch (error) {
         if (error.response?.status === 407) {
           console.log("User not logged in");
@@ -56,10 +73,19 @@ function App() {
         } else {
           console.error("Unexpected error while getting user details:", error);
         }
+        toast.error('Something went wrong!');
       } finally {
         setLoading(false);
       }
   };
+
+  function formatForDateTimeLocalInput(dateStringFromBackend) {
+  const date = new Date(dateStringFromBackend); // backend gives UTC
+  const offset = date.getTimezoneOffset();
+  const localTime = new Date(date.getTime() - offset * 60000);
+  return localTime.toISOString().slice(0, 16); // local yyyy-MM-ddTHH:mm
+}
+
 
     useEffect(() => {
         console.log("app rendered!");
@@ -70,13 +96,16 @@ function App() {
   const createEvent = async (event) => {
     try {
       const res = await axiosInstance.post("/event/create-event", event);
-    const response = await res.data.data;
-    const dateOnly = new Date(response.dateTime).toISOString().slice(0, 16);
-    response.dateTime = dateOnly;
-    setEvents(prev => [...prev, {...response}]); 
+      const response = await res.data.data;
+      response.dateTime = formatForDateTimeLocalInput(response.dateTime);
+      setEvents(prev => [...prev, {...response}]); 
+      toast.success('successfully created an event!');
+      return true;
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while creating an event", backendMessage);
+      toast.error('Something went wrong while creating an event!');
+      return false;
     }
 
     // setEvents((prev) => (
@@ -85,17 +114,20 @@ function App() {
     // ));
   }
 
+
+  //TODO: make a route for lauching an event rather than considering it as editing an event!
   const launchEvent = async (event) => {
     try {
       event.eventLaunched = true;
       let launchedEvent = await axiosInstance.patch("/event/edit-event",event);
       launchedEvent = await launchedEvent.data.data;
-      const dateOnly = new Date(launchedEvent.dateTime).toISOString().slice(0, 16);
-      launchedEvent.dateTime = dateOnly;
+      launchedEvent.dateTime = formatForDateTimeLocalInput(launchedEvent.dateTime);
       setLaunchedEvents(prev => [...prev, {...launchedEvent}]);
+      toast.success('successfully launched the event!');
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while launching an event", backendMessage);
+      toast.error('Something went wrong while launching the event')
     }
   }
 
@@ -105,9 +137,11 @@ function App() {
       await axiosInstance.delete("/event/delete-event",{data: { eventId }});
       setEvents(prevEvents => prevEvents.filter(event => event.eventId !== deleteEventId));
       setLaunchedEvents(prevlaunchedEvents => prevlaunchedEvents.filter(event => event.eventId !== deleteEventId));
+      toast.success("Successfully deleted the event!");
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while deleting an event", backendMessage);
+      toast.error('Something went wrong while deleting an event');
     }
   }
 
@@ -115,19 +149,66 @@ function App() {
     try {
       const res = await axiosInstance.patch("/event/edit-event", event);
       const response = await res.data.data;
-      const dateOnly = new Date(response.dateTime).toISOString().split('T')[0];
-      response.dateTime = dateOnly;
+      response.dateTime = formatForDateTimeLocalInput(response.dateTime);
       setEvents(prev => prev.map(prevEvent => prevEvent.eventId === event.eventId ? response : prevEvent));
+      toast.success('Successfully edited the event!');
+      return true;
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while editing an event", backendMessage);
+      toast.error('Something went wrong while editing an event');
+      return false;
     }
   }
 
+  const joinEvent = async (eventId) => {
+    try {
+      const res = await axiosInstance.post("/ticket/register-event",{eventId: eventId});
+      const response = res.data.data;
+      setTickets(prev => [...prev, response]);
+      console.log("Successfully joined!");
+      console.log(response);
+      toast.success('Successfully joined!');
+    } catch (error) {
+     const message = error.response?.data?.message; 
+     console.log(message);
+     toast.error(message);
+    }
+  }
+
+  const deleteTicket = async (index) => {
+    try {
+      await axiosInstance.patch("/ticket/delete-ticket", {ticketCode: tickets[index].ticketCode})
+      setTickets(prev => prev.filter((_, i) => i !== index));
+      toast.success('successfully deleted the ticket!');
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || "Something went wrong!"; 
+     console.log(message);
+     toast.error(message);
+    }
+  }
 
   return (
-    <EventProvider value={{events, createEvent, launchEvent, setEvents, deleteEvent, editEvent}}>
+    <EventProvider value={{events, createEvent, launchEvent, setEvents, deleteEvent, editEvent, joinEvent, tickets, setTickets, deleteTicket}}>
       <UserProvider value={{username, isLoggedIn, setIsLoggedIn, setUsername, resetUserDetails, loading, setLoading}}>
+          <Toaster toastOptions={{
+    success: {
+      style: {
+        background: 'green',
+        color: 'white',
+      },
+    },
+    error: {
+      style: {
+        background: 'crimson',
+        color: 'white',
+      },
+    },
+    style: {
+      background: '#333', // fallback style for normal toasts
+      color: '#fff',
+    },
+  }}position="top-center" reverseOrder={false} />
           <BrowserRouter> {/*changed from createBrowserRouter to browser router because createbrowser router won't allow dynamic routes, which we want for different event pages*/}
           <Routes>
           <Route path='/' element={<Layout />}>
@@ -186,10 +267,11 @@ function App() {
               </div>
               } />
             <Route path='home' element={<Home eventsToRender={launchedEvents} />} />
-            <Route path='myTickets' element={<MyTickets />} />
+            <Route path='myTickets' element={<MyTickets eventsToRender={launchedEvents} />} />
             <Route path='profile' element={<Profile />}/>
             <Route path="myevents" element={<MyEvents />} />
             <Route path="events/:creator/:eventId" element={<Event events1={launchedEvents}  events2={events}/>} />
+            <Route path="tickets/:index" element={<MyTicketsView eventsToRegister={launchedEvents} />} />
           </Route>
           </Routes>
           </BrowserRouter>

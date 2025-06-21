@@ -19,11 +19,22 @@ export const EventContext = createContext({
       //TODO: add the images here after starting backend
     }
   ],
+  tickets: [
+    {
+      username: "username",
+      eventId: "eventId",
+      registeredAt: "12:12:12",
+      status: "successful"
+    }
+  ],
   createEvent: (event) => {},
   launchEvent: (event) => {},
   setEvents: (event) => {},
   deleteEvent: (eventId) => {},
-  editEvent: (event) => {}
+  editEvent: (event) => {},
+  joinEvent: (eventId) => {},
+  setTickets: (ticket) => {},
+  deleteTicket: (index) => {},
 })
 
 export const useEventContext = () => {

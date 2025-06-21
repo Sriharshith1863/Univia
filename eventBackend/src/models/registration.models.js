@@ -15,7 +15,7 @@ const registrationSchema = new Schema(
         registeredAt: {
             type: Date,
             required: true,
-            default: Date.now(),
+            default: Date.now,
             trim: true,
         },
         status: {
@@ -29,5 +29,7 @@ const registrationSchema = new Schema(
     },
     {timestamps: true}
 );
+
+registrationSchema.index({username: 1, eventId: 1}, {unique: true});
 
 export const Registration = mongoose.model("Registration", registrationSchema);

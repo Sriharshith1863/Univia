@@ -9,7 +9,9 @@ const ticketSchema = new Schema(
         },
         ticketCode: {
             type: String,
+            unique: true,
             required: true,
+            indexed: true
         },
         usedAt: {
             type: Date
@@ -21,6 +23,13 @@ const ticketSchema = new Schema(
                 message: '{VALUE} is not a valid status'
             },
             required: true
+        },
+
+        toDisplay: {
+            type: Boolean,
+            default: true,
+            required: true,
+            trim: true
         }
     },
     {timestamps: true}

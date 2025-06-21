@@ -2,32 +2,36 @@ import React, {useState} from 'react'
 import { useNavigate, NavLink } from 'react-router-dom';
 import { useEventContext, useUserContext } from '../contexts';
 import axiosInstance from '../utils/axiosInstance';
+import toast from 'react-hot-toast';
 function Login({type}) {
-    //TODO: remove the username and setUsername if it is not needed
-    // eslint-disable-next-line no-unused-vars
-    const {username, setIsLoggedIn, setUsername} = useUserContext();
-    const {setEvents} = useEventContext();
+    const {setIsLoggedIn, setUsername} = useUserContext();
+    const {setEvents, setTickets} = useEventContext();
     const [usernameLocal, setUsernameLocal] = useState("");
     const [password, setPassword] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
     const navigate= useNavigate();
 
-        const getUserDetails = async () => {
+    const getUserDetails = async () => {
         try {
           if(type === 'org') {
             const res1 = await axiosInstance.get("/event/user-events");
             const response1 = await res1.data.data;
             const result = Object.keys(response1).length === 0 && response1.constructor === Object ? [] : response1;
-            console.log(result);
             setEvents(result || []);
             console.log("got user events!");
+          }
+          else if(type == 'usr') {
+            const res1 = await axiosInstance.get("/ticket/get-tickets");
+            const response1 = await res1.data.data;
+            const result = Object.keys(response1).length === 0 && response1.constructor === Object ? [] : response1;
+            setTickets(result || []);
+            console.log("got user tickets!");
           }
         } catch (error) {
           console.log("User not logged in (403)", error);
           setIsLoggedIn(false);
           setUsername("");
         }
-      };
+    };
     const loginUser = async (e) => {
         e.preventDefault();
         try {
@@ -36,45 +40,25 @@ function Login({type}) {
                 password
             });
             const response = res.data.data;
-            console.log(response);
             setUsername(response.username);
             setIsLoggedIn(true);
             await getUserDetails();
             navigate("/home");
-            setErrorMessage("");
+            toast.success("Successfully logged in!");
         } catch (error) {
             const backendMessage = error.response?.data?.message;
               if(backendMessage === "Invalid password" || backendMessage === "User not found") {
-                setErrorMessage(backendMessage);
+                toast.error(backendMessage);
               }
               else {
                 console.log("something went wrong while logging in the user.");
-                setErrorMessage("something went wrong while logging in the user.");
+                toast.error("something went wrong while logging in the user.");
               }
         }
-
-        // const checkUser = localStorage.getItem(usernameLocal+type);
-        // const userDetails = JSON.parse(checkUser);
-        // if(!checkUser) {
-        //     setErrorMessage("Invalid username or password");
-        //     setUsernameLocal("");
-        //     setPassword("");
-        //     return;
-        // }
-        // else if(userDetails.password !== password) {
-        //     setErrorMessage("Incorrect password");
-        //     setPassword("");
-        //     return;
-        // }
-        // setUsername(usernameLocal+type);
-        // navigate("/home");
-        // setIsLoggedIn(true);
-        // setErrorMessage("");
     }
   return (
     <form onSubmit={loginUser} className="flex flex-col gap-3 flex-wrap justify-evenly bg-gray-800 text-gray-300 text-lg mx-4 p-6 rounded-lg w-full shadow-lg border border-gray-700">
         <h1 className="text-center text-2xl font-semibold text-purple-400 mb-2">{type=='usr'? "User Login" : "Organiser Login"}</h1>
-        {errorMessage && <p className="text-red-400 bg-red-900/20 p-2 rounded">{errorMessage}</p>}
         <label htmlFor='username' className="font-medium">Username</label>
         <input
         type="text"

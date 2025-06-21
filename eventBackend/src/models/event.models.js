@@ -41,10 +41,16 @@ const eventSchema = new Schema(
         type: String,
         match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address']
     },
-    imageUrl: {
-        type: String,
-        trim: true
-    },
+    eventImage: {
+            public_id: {
+                type: String,
+                trim: true,
+            },
+            url: {
+                type: String,
+                trim: true,
+            }
+        },
     eventCreator: {
         type: String,
         trim: true,
@@ -56,6 +62,7 @@ const eventSchema = new Schema(
         required: true,
         default: false,
     },
+    
   },
   { timestamps: true }
 );

@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useMemo} from 'react'
 import { useEventContext, useUserContext } from '../contexts'
 import { useNavigate } from 'react-router-dom';
+import EventImageUploader from './EventImageUploader';
 function MyEvents() {
   const {isLoggedIn, username, loading} = useUserContext();
   const {events, createEvent, launchEvent, setEvents, deleteEvent, editEvent} = useEventContext();
@@ -27,8 +28,6 @@ function MyEvents() {
 
   useEffect(() => {
     if(loading) return;
-    console.log(`loading: ${loading}`);
-    console.log(`username: ${username}`);
     if (!isLoggedIn) {
       navigate('/');
     }
@@ -38,14 +37,20 @@ function MyEvents() {
     // eslint-disable-next-line
   }, []);
 
-  const submitForm = (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
     if(!isEditable) {
-    createEvent({...formData, eventId: Date.now()});
+      const success = await createEvent(formData);
+    if(!success) {
+      return;
+    }
     }
     else {
+      const success = await editEvent(formData);
+      if(!success) {
+        return;
+      }
       setIsEditable(false);
-      editEvent(formData);
     }
     setActiveForm(false);
     setFormData(initialFormData);
@@ -78,7 +83,6 @@ function MyEvents() {
   }
 
   const renderedEvents = useMemo(() => {
-    console.log(events);
     return (
       <div className="space-y-4 mt-8 w-full">
         {events.length === 0 ? (
@@ -91,7 +95,7 @@ function MyEvents() {
             <div 
               key={index} 
                
-              className="bg-gray-800 rounded-lg border border-gray-700 hover:border-indigo-500 p-4 shadow-md transition-all duration-200 hover:shadow-lg hover:shadow-indigo-900/20 w-full"
+              className="bg-gray-800 rounded-lg border-4 border-gray-700 hover:border-indigo-500 p-4 shadow-md transition-all duration-200 hover:shadow-lg hover:shadow-indigo-900/20 w-full"
             >
               <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -101,6 +105,7 @@ function MyEvents() {
                     alt={event.eventName} 
                     className="h-16 w-16 rounded-full object-cover border-2 border-gray-700"
                   />
+
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-2xl font-semibold text-white">{event.eventName}</h3>
@@ -118,7 +123,7 @@ function MyEvents() {
                     View
                   </button>
                   
-                  {//TODO: we should impose this condition using values fetched from backend!!
+                  {
                     !event.eventLaunched && (
                       <button 
                         onClick={() => handleLaunch(event.eventId, event)} 
@@ -145,7 +150,7 @@ function MyEvents() {
                       </button>
                     )
                   }
-                  {/*TODO: if it can be try to add a confirm delete form, "Do you really want to delete?"*/}
+                  {/*TODO: if it can be, try to add a confirm delete form, "Do you really want to delete?"*/}
                   <button 
                     onClick={() => deleteEvent(event.eventId)}
                     className="bg-red-500 cursor-pointer hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center"
@@ -155,6 +160,7 @@ function MyEvents() {
                     </svg>
                     Delete
                   </button>
+                  <EventImageUploader eventId={event.eventId} />
                 </div>
               </div>
                 <div className="hidden md:block text-gray-500 hover:text-indigo-400">

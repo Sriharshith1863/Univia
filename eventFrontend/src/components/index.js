@@ -6,4 +6,5 @@ import Profile from "./Profile.jsx";
 import MyEvents from "./MyEvents.jsx";
 import Event from "./Event.jsx";
 import LoadingPage from "./Loading.jsx";
-export {Login, SignUp, Home, MyTickets, Profile, MyEvents, Event, LoadingPage};
+import MyTicketsView from "./MyTicketsView.jsx";
+export {Login, SignUp, Home, MyTickets, Profile, MyEvents, Event, LoadingPage, MyTicketsView};

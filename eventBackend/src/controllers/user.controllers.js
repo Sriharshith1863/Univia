@@ -27,10 +27,11 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const signUpUser = asyncHandler(async (req, res) => {
     const {username, password, dob, email, phoneNumber, confirmPassword} = req.body;
+    
     if([username, password, dob, email, phoneNumber, confirmPassword].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required!");
     }
-    if(password != confirmPassword) {
+    if(password !== confirmPassword) {
         throw new ApiError(402, "retype your password");
     }
     //TODO: do structure checks for email, phoneNumber, dob here
@@ -39,7 +40,7 @@ const signUpUser = asyncHandler(async (req, res) => {
         $or: [{ username }, { email }],
     });
     if(userExisted) {
-        throw new ApiError(409, "User already existed!");
+        throw new ApiError(409, "User already exists!");
     }
 
     //TODO: send email otp verification here
@@ -67,12 +68,14 @@ const signUpUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
     const {username, password} = req.body;
+
     const user = await User.findOne({
         username
     });
     if(!user) {
         throw new ApiError(404, "User not found");
     }
+
     const isValid = await user.isPasswordCorrect(password);
     if(!isValid) {
         throw new ApiError(401, "Invalid password");
@@ -179,7 +182,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const UpdateUserAvatar = asyncHandler(async (req, res) => {
-    console.log("atleast entered into the function!");
     const avatarLocalPath = req.file?.path;
     if(!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing");
@@ -196,7 +198,7 @@ const UpdateUserAvatar = asyncHandler(async (req, res) => {
         let previousPublicId = await User.findById(req.user?._id).select("avatar");
         previousPublicId = previousPublicId._doc;
         console.log(previousPublicId);
-        previousPublicId = previousPublicId.avatar.public_id;
+        previousPublicId = previousPublicId.avatar?.public_id;
         let user = await User.findByIdAndUpdate(
             req.user?._id,
             {
@@ -210,7 +212,9 @@ const UpdateUserAvatar = asyncHandler(async (req, res) => {
             {new: true}
         ).select("avatar");
         user = user._doc;
-        await deleteFromCloudinary(previousPublicId);
+        if(previousPublicId) {
+            await deleteFromCloudinary(previousPublicId);
+        }
         return res
             .status(200)
             .json(new ApiResponse(200, {avatar: user.avatar.url}, "avatar successfully updated!"));

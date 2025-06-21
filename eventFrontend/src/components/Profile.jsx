@@ -3,24 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../contexts'
 import axiosInstance from '../utils/axiosInstance';
 import FileUploader from './fileUploader';
+import toast from 'react-hot-toast';
+
 function Profile() {
   const { username, isLoggedIn, setIsLoggedIn, setUsername } = useUserContext();
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isEditable, setIsEditable] = useState(false);
-  const [message, setMessage] = useState("");
-  const [color, setColor] = useState("text-red-500");
   const [dob, setDob] = useState("");
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState("/defaultAvatar.webp");
-  const displayMessage = (messageToDisplay, colorToDisplay) => {
-    setMessage(messageToDisplay);
-    setColor(colorToDisplay);
-    setTimeout(() => {
-      setMessage("");
-      setColor("");
-    }, 3000);
-  }
+
   const getUserDetails = async () => {
     const res = await axiosInstance.get("/user/user-details");
     const response = await res.data.data;
@@ -36,31 +29,14 @@ function Profile() {
   useEffect(() => {
     try {
       getUserDetails();
+      toast.success("Successfully fetched user details!");
     } catch (error) {
-      displayMessage("Something went wrong while fetching user details!", "text-red-500");
+      toast.error("Something went wrong while fetching user details!");
       console.log("Something went wrong while fetching user details!", error);
       if (!isLoggedIn) {
       navigate('/signUp');
     }
     }
-
-
-    // if (!isLoggedIn) {
-    //   navigate('/signUp');
-    // }
-    // const loadDetails = JSON.parse(localStorage.getItem(username));
-    // if (!loadDetails) {
-    //   navigate('/signUp');
-    // }
-    // if (loadDetails.email) {
-    //   setEmail(loadDetails.email);
-    // }
-    // if (loadDetails.phoneNumber) {
-    //   setPhoneNumber(loadDetails.phoneNumber);
-    // }
-    // if (loadDetails.dob) {
-    //   setDob(loadDetails.dob);
-    // }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -84,20 +60,17 @@ const handleUploadResult = (avatarUrl) => {
         setDob(dateOnly);
         setPhoneNumber(response.phoneNumber);
 
-        let userDetails = localStorage.getItem(username);
-        userDetails = JSON.parse(userDetails);
-        localStorage.setItem(username, JSON.stringify({ ...userDetails, email: email, phoneNumber: phoneNumber, dob: dob}));
         setIsEditable(false);
-        displayMessage("Profile successfully edited!", "text-green-500");
+        toast.success("Profile successfully edited!");
       }
 
       catch (error) {
         const backendMessage = error.response?.data?.message;
         if(backendMessage === "No field should be empty!" || backendMessage === "User not found!") {
-          displayMessage(backendMessage, "text-red-500");
+          toast.error(backendMessage);
         }
         else {
-          displayMessage("Something went wrong...", "text-red-500");
+          toast.error("Something went wrong...");
         }
       }
     }
@@ -108,13 +81,6 @@ const handleUploadResult = (avatarUrl) => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      {/* Notification Message */}
-      {message && (
-        <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${color === "text-green-500" ? "bg-green-900/70" : "bg-red-900/70"}`}>
-          <p className={`font-medium ${color}`}>{message}</p>
-        </div>
-      )}
-
       <div className="max-w-8xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-8 text-center text-indigo-400">User Profile</h1>
         

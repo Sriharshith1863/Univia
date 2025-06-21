@@ -1,8 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useEventContext, useUserContext } from '../contexts';
 
 function Event({ events1, events2 }) {
   const { creator, eventId } = useParams();
+  const {joinEvent, tickets} = useEventContext();
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isUser, setIsUser] = useState(true);
+  const {username} = useUserContext();
+  useEffect(() => {
+    const index = tickets.findIndex(element => element.registrationId.eventId === eventId);
+    setIsRegistered(index !== -1);
+    if(username.endsWith("org")) {
+      setIsUser(false);
+    }
+  }, [eventId, tickets, username]);
 
   let eventToRender = events1.find(event =>
     event.eventId === eventId && event.eventCreater === creator
@@ -13,9 +25,8 @@ function Event({ events1, events2 }) {
       event.eventId === eventId && event.eventCreater === creator
     );
   }
-  if (!eventToRender) return <div>event not found</div>;
+  if (!eventToRender) return <div>Event not found</div>;
 
-  
   const event = eventToRender || {
     eventName: "Event Name",
     description: "No description available",
@@ -27,7 +38,7 @@ function Event({ events1, events2 }) {
     organiserEmailId: "Not specified",
     imageUrl: "/defaultAvatar.webp"
   };
-
+  console.log(event);
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <div className="w-full px-4 py-8">
@@ -128,6 +139,14 @@ function Event({ events1, events2 }) {
                   alt={event.eventName}
                   className="w-full h-auto object-cover rounded-lg"
                 />
+              </div>
+              <div>
+                <button
+                onClick={() => joinEvent(event.eventId)}
+                disabled={!isUser || isRegistered}
+                className='mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-300'>
+                {isUser? isRegistered? "Joined" : "Register" : "Only for Users"}
+                </button>
               </div>
             </div>
           </div>
