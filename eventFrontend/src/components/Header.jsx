@@ -12,7 +12,7 @@ function Header() {
 
   return (
     <header className="bg-gray-900 text-white flex justify-between items-center p-4 shadow-md">
-      <h1 className="text-3xl font-bold tracking-wide text-purple-500"> Event Sphere</h1>
+      <h1 className="text-3xl font-bold tracking-wide text-purple-500"> Univia</h1>
 
       <nav className="flex flex-wrap gap-x-6 text-lg font-medium">
         <NavLink
