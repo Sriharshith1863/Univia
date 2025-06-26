@@ -22,7 +22,7 @@ const createEvent = asyncHandler(async (req, res) => {
     }
     if(eventCreater != req.user?.username) {
         console.log("some other user is using some other user's account to create events!");
-        throw new ApiError(401, "Only account owner can create the events on his behalf!");
+        throw new ApiError(403, "Only account owner can create the events on his behalf!");
     }
 
     try {
@@ -59,20 +59,24 @@ const createEvent = asyncHandler(async (req, res) => {
 
 const getUserEvents = asyncHandler(async (req, res) => {
     const username = req.user?.username;
-    let userEvents = await Event.find({eventCreator: username}).select("-createdAt -__v -updatedAt").lean();
-    userEvents = userEvents.map(({_id, eventCreator, dateTime, eventImage, ...rest}) => ({
-        ...rest,
-        eventCreater: eventCreator,
-        eventId: _id,
-        dateTime: new Date(dateTime).toISOString().slice(0, 16),
-        imageUrl: eventImage.url
-    }));
-    // const dateOnly = new Date(userEvents.dateTime).toISOString().split('T')[0];
-    // userEvents.dateTime = dateOnly;
-    console.log(userEvents);
-    return res
-    .status(200)
-    .json(new ApiResponse(200, userEvents, "Successfully retrived user created events!"));
+    try {
+        let userEvents = await Event.find({eventCreator: username}).select("-createdAt -__v -updatedAt").lean();
+        userEvents = userEvents.map(({_id, eventCreator, dateTime, eventImage, ...rest}) => ({
+            ...rest,
+            eventCreater: eventCreator,
+            eventId: _id,
+            dateTime: new Date(dateTime).toISOString().slice(0, 16),
+            imageUrl: eventImage.url
+        }));
+        // const dateOnly = new Date(userEvents.dateTime).toISOString().split('T')[0];
+        // userEvents.dateTime = dateOnly;
+        console.log(userEvents);
+        return res
+        .status(200)
+        .json(new ApiResponse(200, userEvents, "Successfully retrived user created events!"));
+    } catch (error) {
+        console.log(error);
+    }
 });
 
 const editEvent = asyncHandler(async (req, res) => {
@@ -83,12 +87,12 @@ const editEvent = asyncHandler(async (req, res) => {
     }
     if(eventCreater != req.user?.username) {
         console.log("some other user is using some other user's account to edit events!");
-        throw new ApiError(401, "Only account owner can edit events on his behalf!");
+        throw new ApiError(403, "Only account owner can edit events on his behalf!");
     }
     const username = req.user?.username;
-    if(!username.endsWith("org")) {
-        console.log("only organisers can edit events!");
-        throw new ApiError(403, "only organisers can edit events!");
+    if(!username.endsWith("org") || username !== eventCreater) {
+        console.log("only organisers themselves can edit their events!");
+        throw new ApiError(403, "only organisers themselves can edit their events!");
     }
 
     try {
@@ -148,8 +152,8 @@ const UpdateEventPhoto = asyncHandler(async(req, res) => {
     const eventDetails = await Event.findById(eventId).select("eventImage eventCreator").lean();
     const username = req.user?.username;
     if(username !== eventDetails.eventCreator) {
-        console.log("only organisers can delete events!");
-        throw new ApiError(500, "only organisers can delete events!");
+        console.log("only organisers themselves can edit their events!");
+        throw new ApiError(403, "only organisers themselves can edit their events!");
     }
     const photoLocalPath = req.file?.path;
     console.log("photoLocalPath:", photoLocalPath);
@@ -198,8 +202,8 @@ const deleteEvent = asyncHandler(async (req, res) => {
 
     const username = req.user?.username;
     if(!username.endsWith("org")) {
-        console.log("only organisers can delete events!");
-        throw new ApiError(500, "only organisers can delete events!");
+        console.log("only organisers themselves can delete their events!");
+        throw new ApiError(403, "only organisers themselves can delete their events!");
     }
 
     await Event.findByIdAndDelete(eventId);

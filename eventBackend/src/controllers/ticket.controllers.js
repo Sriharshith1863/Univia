@@ -11,10 +11,10 @@ const joinEvent = asyncHandler(async (req, res) => {
     const username1 = req.user?._id;
     const username = req.user?.username;
     if(!username.endsWith("usr")) {
-        throw new ApiError(500, "Only users can register to events!");
+        throw new ApiError(400, "Only users can register to events!");
     }
     if(!eventId) {
-        throw new ApiError(404, "Event Id is mandatory!");
+        throw new ApiError(400, "Event Id is mandatory!");
     }
 
 
@@ -33,7 +33,7 @@ const joinEvent = asyncHandler(async (req, res) => {
     });
     if(alreadyRegistered) {
         console.log("User has already registered to this event!");
-        throw new ApiError(500, "You are already registered to this event!");
+        throw new ApiError(400, "You are already registered to this event!");
     }
 
 
@@ -62,11 +62,11 @@ const joinEvent = asyncHandler(async (req, res) => {
             throw new ApiError(404, "ticket or registration not found!");
         }
     return res
-        .status(200)
-        .json(new ApiResponse(200, checkTicket, "Successfully registered to the event!"));
+        .status(201)
+        .json(new ApiResponse(201, checkTicket, "Successfully registered to the event!"));
     } catch (error) {
         console.log("Something went wrong while registering to the event!", error);
-        throw new ApiError(400, "Something went wrong while registering to the event!");
+        throw new ApiError(500, "Something went wrong while registering to the event!");
     }
 });
 
@@ -120,7 +120,7 @@ const deleteTicket = asyncHandler(async (req, res) => {
         {new: true}
     );
     if(!ticketToDelete) {
-        throw new ApiError(400, "ticket not found!!");
+        throw new ApiError(404, "ticket not found!!");
     }
     return res
         .send(200)

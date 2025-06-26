@@ -36,7 +36,7 @@ function Event({ events1, events2 }) {
     contact1: "Not specified",
     contact2: "Not specified",
     organiserEmailId: "Not specified",
-    imageUrl: "/defaultAvatar.webp"
+    imageUrl: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png"
   };
   console.log(event);
   return (

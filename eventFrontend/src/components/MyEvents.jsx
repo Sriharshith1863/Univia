@@ -15,7 +15,7 @@ function MyEvents() {
     contact1: "",
     contact2: "",
     organiserEmailId: "",
-    imageUrl: "/defaultAvatar.webp",
+    imageUrl: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png",
     eventCreater: `${username}`,
     eventLaunched: false
   };

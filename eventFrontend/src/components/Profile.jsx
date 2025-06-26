@@ -12,7 +12,7 @@ function Profile() {
   const [isEditable, setIsEditable] = useState(false);
   const [dob, setDob] = useState("");
   const navigate = useNavigate();
-  const [avatar, setAvatar] = useState("/defaultAvatar.webp");
+  const [avatar, setAvatar] = useState("https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png");
 
   const getUserDetails = async () => {
     const res = await axiosInstance.get("/user/user-details");
@@ -29,9 +29,8 @@ function Profile() {
   useEffect(() => {
     try {
       getUserDetails();
-      toast.success("Successfully fetched user details!");
     } catch (error) {
-      toast.error("Something went wrong while fetching user details!");
+      toast.error("Something went wrong while fetching your details!");
       console.log("Something went wrong while fetching user details!", error);
       if (!isLoggedIn) {
       navigate('/signUp');

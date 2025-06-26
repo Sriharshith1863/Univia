@@ -49,6 +49,7 @@ const eventSchema = new Schema(
             url: {
                 type: String,
                 trim: true,
+                default: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png"
             }
         },
     eventCreator: {

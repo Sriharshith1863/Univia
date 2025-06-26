@@ -46,6 +46,7 @@ const userSchema = new Schema(
             url: {
                 type: String,
                 trim: true,
+                default: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png"
             }
         },
         refreshToken: {
@@ -55,12 +56,12 @@ const userSchema = new Schema(
     { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
-    if(!this.isModified("password")) {
-        return next();
-    }
-    this.password = await bcrypt.hash(this.password, 10);
-})
+// userSchema.pre("save", async function (next) {
+//     if(!this.isModified("password")) {
+//         return next();
+//     }
+//     this.password = await bcrypt.hash(this.password, 10);
+// })
 
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);

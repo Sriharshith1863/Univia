@@ -7,4 +7,5 @@ import MyEvents from "./MyEvents.jsx";
 import Event from "./Event.jsx";
 import LoadingPage from "./Loading.jsx";
 import MyTicketsView from "./MyTicketsView.jsx";
+import EmailVerificationPage from "./EmailVerificationPage.jsx";
 export {Login, SignUp, Home, MyTickets, Profile, MyEvents, Event, LoadingPage, MyTicketsView};

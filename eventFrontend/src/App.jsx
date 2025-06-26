@@ -9,6 +9,7 @@ import Layout from './Layout.jsx';
 import { useEffect, useState } from 'react';
 import Event from './components/Event.jsx';
 import axiosInstance from './utils/axiosInstance.js';
+import EmailVerificationPage from './components/EmailVerificationPage.jsx';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
@@ -66,14 +67,18 @@ function App() {
           console.log(result);
         }
       } catch (error) {
-        if (error.response?.status === 407) {
+        console.log(error);
+        if (error.code === "ERR_NETWORK") {
+          console.warn("Network error - likely due to proxy. Skipping toast.");
+        }
+        else if (error.response?.status === 407) {
           console.log("User not logged in");
           setIsLoggedIn(false);
           setUsername("");
         } else {
-          console.error("Unexpected error while getting user details:", error);
+          console.log("Unexpected error while getting user details:", error);
+          toast.error('Something went wrong!');
         }
-        toast.error('Something went wrong!');
       } finally {
         setLoading(false);
       }
@@ -104,7 +109,7 @@ function App() {
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while creating an event", backendMessage);
-      toast.error('Something went wrong while creating an event!');
+      toast.error(backendMessage);
       return false;
     }
 
@@ -115,7 +120,7 @@ function App() {
   }
 
 
-  //TODO: make a route for lauching an event rather than considering it as editing an event!
+  //TODO: make a route for launching an event rather than considering it as editing an event!
   const launchEvent = async (event) => {
     try {
       event.eventLaunched = true;
@@ -141,7 +146,7 @@ function App() {
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while deleting an event", backendMessage);
-      toast.error('Something went wrong while deleting an event');
+      toast.error(backendMessage);
     }
   }
 
@@ -156,7 +161,7 @@ function App() {
     } catch (error) {
       const backendMessage = error.response?.data?.message || error.message;
       console.log("Something went wrong while editing an event", backendMessage);
-      toast.error('Something went wrong while editing an event');
+      toast.error(backendMessage);
       return false;
     }
   }
@@ -272,6 +277,7 @@ function App() {
             <Route path="myevents" element={<MyEvents />} />
             <Route path="events/:creator/:eventId" element={<Event events1={launchedEvents}  events2={events}/>} />
             <Route path="tickets/:index" element={<MyTicketsView eventsToRegister={launchedEvents} />} />
+            <Route path="verify-email/:verificationId" element={<EmailVerificationPage />} />
           </Route>
           </Routes>
           </BrowserRouter>

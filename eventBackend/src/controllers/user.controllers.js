@@ -6,6 +6,54 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.models.js";
+import { Verification } from "../models/verification.models.js";
+import { sendMail } from "../utils/mail.js";
+
+const sendOTP = asyncHandler(async (req, res) => {
+    const {username, email, password, dob, phoneNumber, confirmPassword} = req.body;
+    if([username, password, dob, email, phoneNumber, confirmPassword].some((field) => field?.trim() === "")) {
+        throw new ApiError(400, "All fields are required!");
+    }
+    if(password !== confirmPassword) {
+        throw new ApiError(400, "retype your password");
+    }
+    //TODO: instead of just checking in just user schema, check in the verification schema also!
+    const userExisted = await User.findOne({
+        $or: [{ username }, { email }],
+    });
+    const pendingUserExisted = await Verification.findOne({
+        $or: [{"tempUserData.username": username}, {"tempUserData.email": email}],
+    });
+    if(userExisted || pendingUserExisted) {
+        throw new ApiError(409, "User with username or email Id already exists!");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    const unVerifiedUser = await Verification.create({
+        otp: hashedOtp,
+        tempUserData: {
+            username,
+            password: hashedPassword,
+            email,
+            dob,
+            phoneNumber
+        }
+    });
+    const createdUser = await Verification.findById(unVerifiedUser._id).select("otp expiresAt _id").lean();
+    if(!createdUser) {
+        throw new ApiError(500, "Something went wrong while processing the user data!");
+    }
+    const html = `
+    <h2>Email Verification</h2>
+    <p>Your OTP for verifying your email is: <b>${otp}</b></p>
+    <p>This code will expire in 5 minutes.</p>
+    `;
+    await sendMail(email, "Your Event Sphere Email verification OTP", html);
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {verificationId: createdUser._id}, "OTP sent to email!"));
+});
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -26,33 +74,29 @@ const generateAccessAndRefreshToken = async (userId) => {
 };
 
 const signUpUser = asyncHandler(async (req, res) => {
-    const {username, password, dob, email, phoneNumber, confirmPassword} = req.body;
+    const {verificationId, otp} = req.body;
+    console.log(verificationId);
+    const unVerifiedUser = await Verification.findById(verificationId).select("otp tempUserData").lean();
+    if(!unVerifiedUser) {
+        throw new ApiError(400, "Your verification session has expired. Please sign up again");
+    }
     
-    if([username, password, dob, email, phoneNumber, confirmPassword].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required!");
+    const isMatch = await bcrypt.compare(otp, unVerifiedUser.otp);
+    console.log(isMatch);
+    if(!isMatch) {
+        console.log("In to this incorrect otp error");
+        throw new ApiError(400, "Incorrect otp");
     }
-    if(password !== confirmPassword) {
-        throw new ApiError(402, "retype your password");
-    }
-    //TODO: do structure checks for email, phoneNumber, dob here
-
-    const userExisted = await User.findOne({
-        $or: [{ username }, { email }],
-    });
-    if(userExisted) {
-        throw new ApiError(409, "User already exists!");
-    }
-
-    //TODO: send email otp verification here
 
     try {
         const user = await User.create({
-            username,
-            password,
-            dob,
-            email,
-            phoneNumber,
+            username: unVerifiedUser.tempUserData.username,
+            password: unVerifiedUser.tempUserData.password,
+            dob: unVerifiedUser.tempUserData.dob,
+            email: unVerifiedUser.tempUserData.email,
+            phoneNumber: unVerifiedUser.tempUserData.phoneNumber,
         });
+
         const createdUser = await User.findById(user._id).select("-password -refreshToken");
         if(!createdUser) {
             throw new ApiError(500, "Something went wrong checking creation of a user!");
@@ -248,4 +292,4 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-export { signUpUser, loginUser, updateProfile, currentUserDetails, UpdateUserAvatar, refreshAccessToken, logoutUser };
+export { signUpUser, loginUser, updateProfile, currentUserDetails, UpdateUserAvatar, refreshAccessToken, logoutUser, sendOTP };

@@ -14,7 +14,7 @@ function SignUp({type}) {
         const signUp = async (e) => {
             e.preventDefault();
             try {
-              await axiosInstance.post("/user/signUp",{
+              let verificationOutput = await axiosInstance.post("/user/send-otp",{
                 username: usernameLocal+type,
                 password,
                 dob,
@@ -22,22 +22,21 @@ function SignUp({type}) {
                 phoneNumber,
                 confirmPassword
               });
-
+              verificationOutput = verificationOutput.data.data;
+              console.log(verificationOutput);
               navigate("/");
-              toast.success("Successfully signed up, now login to use your account!");
+              navigate(`/verify-email/${verificationOutput.verificationId}`);
+              //toast.success("Successfully signed up, now login to use your account!");
             } catch (error) {
               const backendMessage = error.response?.data?.message;
-              if(!backendMessage) {
-                toast.error("something went wrong while registering user.");
+              if(!backendMessage || backendMessage !== "retype your password") {
+                toast.error("something went wrong while processing your info.");
                 console.log("something went wrong while registering user.");
               }
               else {
                 if(backendMessage === "retype your password") {
                   toast.error(backendMessage);
                   setConfirmPassword("");
-                }
-                else {
-                  toast.error(backendMessage);
                 }
               }
             }
