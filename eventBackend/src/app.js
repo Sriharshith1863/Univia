@@ -25,6 +25,7 @@ app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/event", eventRouter);
 app.use("/api/v1/ticket", ticketRouter);
+app.get("/", (req, res) => res.json({ status: "OK" }));
 
 app.use(errorHandler);
 export { app };
