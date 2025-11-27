@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-    baseURL: "https://univia.onrender.com/",
+    baseURL: "https://univia.onrender.com/api/v1",
     withCredentials: true,
     headers: {
         "Content-Type": "application/json"
