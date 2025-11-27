@@ -17,7 +17,6 @@ const sendOTP = asyncHandler(async (req, res) => {
     if(password !== confirmPassword) {
         throw new ApiError(400, "retype your password");
     }
-    //TODO: instead of just checking in just user schema, check in the verification schema also!
     const userExisted = await User.findOne({
         $or: [{ username }, { email }],
     });
@@ -30,7 +29,7 @@ const sendOTP = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
-    const unVerifiedUser = await Verification.create({
+    const vData = {
         otp: hashedOtp,
         tempUserData: {
             username,
@@ -39,7 +38,10 @@ const sendOTP = asyncHandler(async (req, res) => {
             dob,
             phoneNumber
         }
-    });
+    };
+    console.log(vData);
+    const unVerifiedUser = await Verification.create(vData);
+    console.log(unVerifiedUser);
     const createdUser = await Verification.findById(unVerifiedUser._id).select("otp expiresAt _id").lean();
     if(!createdUser) {
         throw new ApiError(500, "Something went wrong while processing the user data!");
