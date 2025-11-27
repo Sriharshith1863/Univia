@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRef} from 'react';
-import axiosInstance from '../utils/axiosInstance';
+import axiosInstance from '../utils/axiosInstance.js';
 import toast from 'react-hot-toast';
 function EventImageUploader({eventId}) {
   const fileInputRef = useRef();

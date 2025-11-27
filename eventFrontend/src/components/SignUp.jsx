@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import { useNavigate } from "react-router-dom";
-import axiosInstance from '../utils/axiosInstance';
+import axiosInstance from '../utils/axiosInstance.js';
 import toast from 'react-hot-toast';
 function SignUp({type}) {
         const [usernameLocal, setUsernameLocal] = useState("");

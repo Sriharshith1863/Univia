@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useMemo} from 'react'
 import { useEventContext, useUserContext } from '../contexts'
 import { useNavigate } from 'react-router-dom';
-import EventImageUploader from './EventImageUploader';
+import EventImageUploader from './EventImageUploader.jsx';
 function MyEvents() {
   const {isLoggedIn, username, loading} = useUserContext();
   const {events, createEvent, launchEvent, setEvents, deleteEvent, editEvent} = useEventContext();

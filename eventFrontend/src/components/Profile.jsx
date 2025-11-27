@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../contexts'
-import axiosInstance from '../utils/axiosInstance';
-import FileUploader from './fileUploader';
+import axiosInstance from '../utils/axiosInstance.js';
+import FileUploader from './FileUploader.jsx';
 import toast from 'react-hot-toast';
 
 function Profile() {

@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import { useNavigate, NavLink } from 'react-router-dom';
 import { useEventContext, useUserContext } from '../contexts';
-import axiosInstance from '../utils/axiosInstance';
+import axiosInstance from '../utils/axiosInstance.js';
 import toast from 'react-hot-toast';
 function Login({type}) {
     const {setIsLoggedIn, setUsername} = useUserContext();
