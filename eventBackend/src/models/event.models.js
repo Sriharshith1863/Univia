@@ -60,10 +60,18 @@ const eventSchema = new Schema(
     eventLaunched: {
         type: Boolean,
         trim: true,
-        required: true,
         default: false,
     },
-    
+    age: {
+        type: Number,
+        trim: true,
+        default: -1,
+    },
+    cost: {
+        type: Number,
+        trim: true,
+        default: -1,
+    },
   },
   { timestamps: true }
 );

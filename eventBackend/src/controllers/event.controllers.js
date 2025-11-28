@@ -8,7 +8,7 @@ import bcrypt from "bcrypt";
 import { Event } from "../models/event.models.js";
 
 const createEvent = asyncHandler(async (req, res) => {
-    const {eventName, venue, dateTime, description, organiserName, contact1, contact2, organiserEmailId, eventCreater, eventLaunched} = req.body;
+    const {eventName, venue, dateTime, description, organiserName, contact1, contact2, organiserEmailId, eventCreater, eventLaunched, age, cost} = req.body;
 
     const username = req.user?.username;
     if(!username.endsWith("org")) {
@@ -36,7 +36,9 @@ const createEvent = asyncHandler(async (req, res) => {
             contact2,
             organiserEmailId,
             eventCreator: eventCreater,
-            eventLaunched
+            eventLaunched,
+            age,
+            cost,
         });
         let createdEvent = await Event.findById(event._id).select("-createdAt -__v -updatedAt").lean();
         if(!createdEvent) {
@@ -80,7 +82,7 @@ const getUserEvents = asyncHandler(async (req, res) => {
 });
 
 const editEvent = asyncHandler(async (req, res) => {
-    const {eventId, eventName, venue, dateTime, description, organiserName, contact1, contact2, organiserEmailId, eventCreater, eventLaunched} = req.body;
+    const {eventId, eventName, venue, dateTime, description, organiserName, contact1, contact2, organiserEmailId, eventCreater, eventLaunched, age, cost} = req.body;
     if(!eventName || !venue || !dateTime || isNaN(Date.parse(dateTime)) || !organiserName || !contact1 || !eventCreater || typeof eventLaunched !== "boolean") {
         console.log("Insufficient event details to edit!");
         throw new ApiError(400, "Some fields are needed to be filled!");
@@ -109,7 +111,9 @@ const editEvent = asyncHandler(async (req, res) => {
                 contact2,
                 organiserEmailId,
                 eventCreator: eventCreater,
-                eventLaunched
+                eventLaunched,
+                age,
+                cost,
             }
         },
         {

@@ -15,8 +15,9 @@ export const EventContext = createContext({
       organiserEmailId: "email@gmail.com",
       imageUrl: "/defaultAvatar.webp",
       eventCreater: "event owner",
-      eventLaunched: false
-      //TODO: add the images here after starting backend
+      eventLaunched: false,
+      age: -1,
+      cost: -1,
     }
   ],
   tickets: [
