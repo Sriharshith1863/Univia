@@ -6,17 +6,33 @@ import { Event } from "../models/event.models.js";
 import { Registration } from "../models/registration.models.js";
 import { Ticket } from "../models/ticket.models.js";
 import { nanoid } from "nanoid";
+
+const getAge = (dob) => {
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+
+  const hasNotHadBirthdayThisYear =
+    today.getMonth() < dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() &&
+     today.getDate() < dob.getDate());
+
+  if (hasNotHadBirthdayThisYear) age--;
+
+  return age;
+}
+
 const joinEvent = asyncHandler(async (req, res) => {
     const {eventId} = req.body;
     const username1 = req.user?._id;
     const username = req.user?.username;
+    const userDob = req.user?.dob;
+    const userAge = getAge(userDob);
     if(!username.endsWith("usr")) {
         throw new ApiError(400, "Only users can register to events!");
     }
     if(!eventId) {
         throw new ApiError(400, "Event Id is mandatory!");
     }
-
 
     const event = await Event.findOne({
        _id: eventId,
@@ -38,6 +54,10 @@ const joinEvent = asyncHandler(async (req, res) => {
 
 
     try {
+        const eventConstraints = await Event.findById(eventId).select("age cost").lean();
+        if(userAge < eventConstraints.age) {
+            throw new ApiError(400, "doesn't satisfy age condition");
+        }
         const registrationObject = await Registration.create({
         username: username1,
         eventId: event._id,
@@ -66,7 +86,7 @@ const joinEvent = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, checkTicket, "Successfully registered to the event!"));
     } catch (error) {
         console.log("Something went wrong while registering to the event!", error);
-        throw new ApiError(500, "Something went wrong while registering to the event!");
+        throw new ApiError(500, "Something went wrong while registering to the event!", error);
     }
 });
 

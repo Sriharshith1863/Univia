@@ -17,14 +17,16 @@ function MyEvents() {
     organiserEmailId: "",
     imageUrl: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png",
     eventCreater: `${username}`,
-    eventLaunched: false
+    eventLaunched: false,
+    age: "",
+    cost: "",
   };
   
   const [formData, setFormData] = useState(initialFormData);
   const navigate = useNavigate();
   const [activateForm, setActiveForm] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if(loading) return;
@@ -74,6 +76,13 @@ function MyEvents() {
     );
 
     launchEvent(event);
+  }
+
+
+  const handleDelete = (eventId) => {
+    deleteEvent(eventId);
+    setConfirmDelete(false);
+    setFormData(initialFormData);
   }
 
   const handleEdit = (event) => {
@@ -150,9 +159,9 @@ function MyEvents() {
                       </button>
                     )
                   }
-                  {/*TODO: if it can be, try to add a confirm delete form, "Do you really want to delete?"*/}
                   <button 
-                    onClick={() => deleteEvent(event.eventId)}
+                    onClick={() => {setConfirmDelete(true);
+                                    setFormData(event);}}
                     className="bg-red-500 cursor-pointer hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -301,7 +310,28 @@ function MyEvents() {
                       className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                     />
                   </div>
-                  
+                  <div className="space-y-2">
+                    <label htmlFor="ageLimit" className="block text-sm font-medium text-gray-400">Age Limit(Minimum Age) (Optional)</label>
+                    <input 
+                      type="number" 
+                      id="age" 
+                      name="age" 
+                      onChange={handleChange} 
+                      value={formData.age}
+                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="Cost" className="block text-sm font-medium text-gray-400">Entry cost (Optional)</label>
+                    <input 
+                      type="number" 
+                      id="cost" 
+                      name="cost" 
+                      onChange={handleChange} 
+                      value={formData.cost}
+                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
                   <div className="space-y-2 md:col-span-2">
                     <label htmlFor="description" className="block text-sm font-medium text-gray-400">Description</label>
                     <textarea 
@@ -318,7 +348,8 @@ function MyEvents() {
                 <div className="mt-8 flex justify-end">
                   <button 
                     type="button" 
-                    onClick={() => setActiveForm(false)} 
+                    onClick={() => {setActiveForm(false);
+                      setFormData(initialFormData);}} 
                     className="px-4 py-2 bg-gray-700 cursor-pointer text-gray-300 rounded-lg mr-4 hover:bg-gray-600"
                   >
                     Cancel
@@ -334,7 +365,54 @@ function MyEvents() {
             </div>
           </div>
         )}
+        {/* Confirm Delete Form */}
+        {confirmDelete && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+              
+              {/* Header */}
+              <div className="bg-gray-700 px-6 py-4 flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-red-400">
+                  Confirm Deletion
+                </h2>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
+              {/* Body */}
+              <div className="p-6 text-gray-300">
+                <p className="text-center text-base">
+                  This action cannot be undone.  
+                  <br />
+                  Are you sure you want to delete this event?
+                </p>
+
+                {/* Buttons */}
+                <div className="mt-8 flex justify-end gap-4">
+                  <button
+                    className="px-5 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 cursor-pointer"
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 cursor-pointer"
+                    onClick={() => handleDelete(formData.eventId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Event List */}
         <div className="w-full">
           {renderedEvents}

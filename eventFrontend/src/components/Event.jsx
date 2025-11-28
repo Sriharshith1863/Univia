@@ -11,8 +11,8 @@ function Event({ events1, events2 }) {
   useEffect(() => {
     const index = tickets.findIndex(element => element.registrationId.eventId === eventId);
     setIsRegistered(index !== -1);
-    if(username.endsWith("org")) {
-      setIsUser(false);
+    if(username && username.endsWith("usr")) {
+      setIsUser(true);
     }
   }, [eventId, tickets, username]);
 
@@ -36,7 +36,9 @@ function Event({ events1, events2 }) {
     contact1: "Not specified",
     contact2: "Not specified",
     organiserEmailId: "Not specified",
-    imageUrl: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png"
+    imageUrl: "https://res.cloudinary.com/dk4prfm7s/image/upload/v1750942873/Image_not_available_hnbucy.png",
+    cost: 0,
+    age: 0,
   };
   console.log(event);
   return (
@@ -127,6 +129,32 @@ function Event({ events1, events2 }) {
                     </div>
                   </div>
                 )}
+                {event.age && event.age > 0 && (
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                      </svg>
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-xl font-medium text-white">Minimum age</h3>
+                      <p className="text-gray-300 text-lg break-words">{event.age}</p>
+                    </div>
+                  </div>
+                )}
+                {event.cost && event.cost > 0 && (
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                      </svg>
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-xl font-medium text-white">Entry cost</h3>
+                      <p className="text-gray-300 text-lg break-words">{event.cost}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -145,7 +173,7 @@ function Event({ events1, events2 }) {
                 onClick={() => joinEvent(event.eventId)}
                 disabled={!isUser || isRegistered}
                 className='mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-300'>
-                {isUser? isRegistered? "Joined" : "Register" : "Only for Users"}
+                {username !== "" ? isUser? isRegistered? "Joined" : "Register" : "Organizers can't register" : "Sign up or Login to participate"}
                 </button>
               </div>
             </div>

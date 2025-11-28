@@ -39,7 +39,7 @@ function App() {
       setLaunchedEvents(response);
     } catch (error) {
       console.log("Something went wrong while fetching launched events!", error);
-      toast.error('Something went wrong while fetching launched events!');
+      toast.error('Something went wrong while fetching events!');
     }
   }
 
