@@ -133,6 +133,7 @@ const loginUser = asyncHandler(async (req, res) => {
         .select("-password -refreshToken").lean();
     const options = {
         httpOnly: true,
+        sameSite: "None",
         secure: process.env.NODE_ENV === "production",
     }
 
@@ -206,6 +207,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         }
         const options = {
             httpOnly: true,
+            sameSite: "None",
             secure: process.env.NODE_ENV === "production",
         }
         const {accessToken, refreshToken: newRefreshToken} = 
@@ -285,6 +287,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
     const options = {
         httpOnly: true,
+        sameSite: "None",
         secure: process.env.NODE_ENV === "production",
     }
     return res
